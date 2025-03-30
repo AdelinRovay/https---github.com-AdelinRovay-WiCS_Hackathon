@@ -81,7 +81,12 @@ async def upload_pdf(file: UploadFile = File(...)):
 async def text(input_data: InputData):
     input_text = input_data.input
     flashcards = format_flashcards(generate_flashcards(input_text))
+
     return flashcards
+@app.get("/")
+async def root():
+    return {"message": "Welcome to the Flashcards API"}
+
 
 if __name__ == "__main__":
     import uvicorn
