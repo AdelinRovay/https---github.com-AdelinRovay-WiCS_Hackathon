@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from PyPDF2 import PdfReader
 import json
-
+from fastapi import Form
 from pydantic import BaseModel
 
 load_dotenv()
