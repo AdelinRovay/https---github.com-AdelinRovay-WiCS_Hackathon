@@ -18,6 +18,7 @@ app = FastAPI()
 
 class InputData(BaseModel):
     input: str
+    difficulty: str 
 
 app.add_middleware(
     CORSMiddleware,
@@ -77,26 +78,28 @@ def format_flashcards(response_text):
     output = {"flashcards": flashcards_list}
     return json.dumps(output, indent=2)
 
-    return flashcards
-@app.get("/")
-async def root():
-    return {"message": "Welcome to the Flashcards API"}
-
 @app.post("/pdfFlashCards/")
 async def upload_pdf(file: UploadFile = File(...), difficulty: str = Form(...)):
+    
     text = await extract_text_from_pdf(file)
     if "Error" in text:
         return {"error": text}
-    flashcards = format_flashcards(generate_flashcards(text, difficulty))
+    flashcards = generate_flashcards(text, difficulty)
     return flashcards
-
 
 @app.post("/textFlashCards/")
 async def text(input_data: InputData):
     input_text = input_data.input
     difficulty = input_data.difficulty
-    flashcards = format_flashcards(generate_flashcards(input_text, difficulty))
+    flashcards = generate_flashcards(input_text, difficulty)
     return flashcards
+
+
+@app.get("/")
+async def root():
+    return {"message": "Welcome to the Flashcards API"}
+
+
 
 
 if __name__ == "__main__":
