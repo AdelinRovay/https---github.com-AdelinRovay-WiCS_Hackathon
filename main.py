@@ -71,10 +71,13 @@ def format_flashcards(response_text):
 
 @app.post("/pdfFlashCards/")
 async def upload_pdf(file: UploadFile = File(...)):
+    print("Before extraction")
     text = await extract_text_from_pdf(file)
+    print("After extraction")
     if "Error" in text:
         return {"error": text}
     flashcards = format_flashcards(generate_flashcards(text))
+    print("After card Generation")
     return flashcards
 
 @app.post("/textFlashCards/")
