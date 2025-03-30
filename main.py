@@ -75,15 +75,16 @@ async def upload_pdf(file: UploadFile = File(...)):
     text = await extract_text_from_pdf(file)
     print("After extraction")
     if "Error" in text:
+        print("Before Error")
         return {"error": text}
-    flashcards = format_flashcards(generate_flashcards(text))
+    flashcards = generate_flashcards(text)
     print("After card Generation")
     return flashcards
 
 @app.post("/textFlashCards/")
 async def text(input_data: InputData):
     input_text = input_data.input
-    flashcards = format_flashcards(generate_flashcards(input_text))
+    flashcards = generate_flashcards(input_text)
 
     return flashcards
 @app.get("/")
