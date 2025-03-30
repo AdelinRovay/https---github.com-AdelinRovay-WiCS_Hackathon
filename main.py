@@ -41,20 +41,28 @@ async def extract_text_from_pdf(pdf_file: UploadFile):
     except Exception as e:
         return f"Error extracting text: {str(e)}"
 
-def generate_flashcards(text):
+def generate_flashcards(text, difficulty):
+    """Sends text to OpenAI API and gets flashcards in Q&A format."""
     try:
         openai.api_key = OPENAI_API_KEY
-        prompt = f"""Extract key points and generate at least 10 flashcards in Q&A format from the following text. Make sure to return it in the below JSON format:
-[
-  {{ "question": "What is Photosynthesis?", "answer": "The process where plants convert sunlight into energy." }},
-  {{ "question": "Define Newton's second law.", "answer": "Force equals mass times acceleration." }}
-]:\n{text}"""
-        
+
+        prompt = f"""You are generating flashcards for a student at a {difficulty.lower()} level.
+                Extract at least 10 key points and write flashcards in Q&A format based on the following content.
+                Return the output as a JSON array in this format:
+                [
+                    {{ "question": "What is Photosynthesis?", "answer": "The process where plants convert sunlight into energy." }},
+                    {{ "question": "Define Newton's second law.", "answer": "Force equals mass times acceleration." }}
+                ]
+
+                Content:
+                    {text}
+                """
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.7
         )
+        
         return response['choices'][0]['message']['content'].strip()
     except Exception as e:
         return f"Error generating flashcards: {str(e)}"
@@ -69,27 +77,26 @@ def format_flashcards(response_text):
     output = {"flashcards": flashcards_list}
     return json.dumps(output, indent=2)
 
-@app.post("/pdfFlashCards/")
-async def upload_pdf(file: UploadFile = File(...)):
-    print("Before extraction")
-    text = await extract_text_from_pdf(file)
-    print("After extraction")
-    if "Error" in text:
-        print("Before Error")
-        return {"error": text}
-    flashcards = generate_flashcards(text)
-    print("After card Generation")
-    return flashcards
-
-@app.post("/textFlashCards/")
-async def text(input_data: InputData):
-    input_text = input_data.input
-    flashcards = generate_flashcards(input_text)
-
     return flashcards
 @app.get("/")
 async def root():
     return {"message": "Welcome to the Flashcards API"}
+
+@app.post("/pdfFlashCards/")
+async def upload_pdf(file: UploadFile = File(...), difficulty: str = Form(...)):
+    text = await extract_text_from_pdf(file)
+    if "Error" in text:
+        return {"error": text}
+    flashcards = format_flashcards(generate_flashcards(text, difficulty))
+    return flashcards
+
+
+@app.post("/textFlashCards/")
+async def text(input_data: InputData):
+    input_text = input_data.input
+    difficulty = input_data.difficulty
+    flashcards = format_flashcards(generate_flashcards(input_text, difficulty))
+    return flashcards
 
 
 if __name__ == "__main__":
